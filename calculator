@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paid Leave Cost Estimator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172b4d;
+      background: #f3f6fa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px 16px;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px #172b4d14;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #173b67;
+    }
+
+    .intro, .note {
+      color: #52657d;
+      line-height: 1.55;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin: 28px 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 650;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 7px;
+      padding: 11px 12px;
+      border: 1px solid #b9c5d3;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    input:focus {
+      outline: 3px solid #a9d2ff;
+      border-color: #2269a8;
+    }
+
+    .help {
+      display: block;
+      margin-top: 5px;
+      color: #65758b;
+      font-size: 0.85rem;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .results {
+      padding: 22px;
+      background: #f0f6fc;
+      border-radius: 12px;
+    }
+
+    .results h2 {
+      margin-top: 0;
+    }
+
+    .result {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #d6e0ea;
+    }
+
+    .result:last-child {
+      border-bottom: 0;
+    }
+
+    .result strong {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .note {
+      margin-bottom: 0;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 560px) {
+      main {
+        padding: 22px 18px;
+      }
+
+      .fields {
+        grid-template-columns: 1fr;
+      }
+
+      .result {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .result strong {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Paid Leave Cost Estimator</h1>
+    <p class="intro">
+      Estimate potential wage-replacement costs and a separate employer payroll
+      contribution scenario for your business.
+    </p>
+
+    <form id="calculator" class="fields">
+      <label>
+        Number of employees
+        <input id="employees" type="number" min="1" step="1" value="10" required>
+      </label>
+
+      <label>
+        Total annual payroll ($)
+        <input id="payroll" type="number" min="0" step="1000" value="500000" required>
+      </label>
+
+      <label>
+        Employees expected to take leave (%)
+        <input id="leaveRate" type="number" min="0" max="100" step="0.5" value="5" required>
+        <span class="help">Your estimate of the share of employees taking leave in a year.</span>
+      </label>
+
+      <label>
+        Average leave per employee (weeks)
+        <input id="leaveWeeks" type="number" min="0" max="52" step="0.5" value="6" required>
+      </label>
+
+      <label>
+        Estimated wage replacement (%)
+        <input id="replacementRate" type="number" min="0" max="100" step="1" value="60" required>
+      </label>
+
+      <label>
+        Employer contribution assumption (% of payroll)
+        <input id="contributionRate" type="number" min="0" max="100" step="0.1" placeholder="Enter a rate" required>
+        <span class="help">Enter a scenario rate; this is not a confirmed SB 396 rate.</span>
+      </label>
+    </form>
+
+    <section class="results" aria-live="polite">
+      <h2>Your estimate</h2>
+      <div class="result">
+        <span>Average annual pay per employee</span>
+        <strong id="averagePay">$0</strong>
+      </div>
+      <div class="result">
+        <span>Estimated employees taking leave</span>
+        <strong id="leaveTakers">0</strong>
+      </div>
+      <div class="result">
+        <span>Estimated wage-replacement cost</span>
+        <strong id="leaveCost">$0</strong>
+      </div>
+      <div class="result">
+        <span>Estimated annual employer contribution</span>
+        <strong id="contribution">$0</strong>
+      </div>
+      <p class="note">
+        Planning estimate only, not legal or financial advice. Ohio SB 396 is
+        proposed legislation; verify its current status and any final rates or
+        requirements with official sources before relying on this estimate.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.querySelector("#calculator");
+    const fields = {
+      employees: document.querySelector("#employees"),
+      payroll: document.querySelector("#payroll"),
+      leaveRate: document.querySelector("#leaveRate"),
+      leaveWeeks: document.querySelector("#leaveWeeks"),
+      replacementRate: document.querySelector("#replacementRate"),
+      contributionRate: document.querySelector("#contributionRate"),
+    };
+
+    const money = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+
+    function updateEstimate() {
+      const employees = Number(fields.employees.value);
+      const payroll = Number(fields.payroll.value);
+      const leaveRate = Number(fields.leaveRate.value);
+      const leaveWeeks = Number(fields.leaveWeeks.value);
+      const replacementRate = Number(fields.replacementRate.value);
+      const contributionRate = Number(fields.contributionRate.value);
+      const valid = form.checkValidity();
+
+      if (!valid || employees <= 0) {
+        return;
+      }
+
+      const averageWeeklyPay = payroll / employees / 52;
+      const leaveTakers = employees * leaveRate / 100;
+      const estimatedLeaveCost =
+        leaveTakers * averageWeeklyPay * leaveWeeks * replacementRate / 100;
+      const estimatedContribution = payroll * contributionRate / 100;
+
+      document.querySelector("#averagePay").textContent =
+        money.format(payroll / employees);
+      document.querySelector("#leaveTakers").textContent =
+        leaveTakers.toFixed(1);
+      document.querySelector("#leaveCost").textContent =
+        money.format(estimatedLeaveCost);
+      document.querySelector("#contribution").textContent =
+        money.format(estimatedContribution);
+    }
+
+    form.addEventListener("input", updateEstimate);
+    updateEstimate();
+  </script>
+</body>
+</html>
