@@ -1,2 +1,220 @@
-# TimeToCare
-Me and Kyle's Time to Care Project
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paid Leave Cost Estimator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #FFFF;
+      background: #e7e7e7;
+    }
+
+ * {
+      box-sizing: border-box;
+    }
+     body {
+      margin: 0;
+      padding: 32px 16px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px;
+      background: #5C2F55;
+      border-radius: 16px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #FAAC6C;
+    }
+
+    .intro, .note {
+      color: #013C42;
+      line-height: 1.55;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin: 20px 0;
+    }
+
+   label {
+      display: block;
+      font-weight: 650;
+    }
+   
+
+    input {
+      width: 100%;
+      margin-top: 7px;
+      padding: 11px 12px;
+      border: 1px solid #011042;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    input:focus {
+      outline: 3px solid #a9d2ff;
+      border-color: #2269a8;
+    }
+
+    .help {
+      display: block;
+      margin-top: 5px;
+      color: #013C42;
+      font-size: 0.85rem;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .results {
+      padding: 22px;
+      background: #5AB8A8;
+      border-radius: 12px;
+    }
+
+    .results h2 {
+      margin-top: 0;
+    }
+
+    .result {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #d6e0ea;
+    }
+
+    .result:last-child {
+      border-bottom: 0;
+    }
+
+    .result strong {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .note {
+      font-size: 0.9rem;
+      color: #ffff;
+    }
+
+    @media (max-width: 560px) {
+      main {
+        padding: 22px 18px;
+      }
+
+      .fields {
+        grid-template-columns: 1fr;
+      }
+
+      .result {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .result strong {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+    <main>
+        <h1> Paid Leave Cost Calculator</h1>
+        <form id = "calculator" class = "fields">
+            <label>
+                Number of Employees
+                <input id = "numemployees" type = "number" min = "1" step = "1" required>
+            </label>
+            <label>
+                Total Payroll ($)
+                <input id = "payroll" type = "number" min = "0" step = "0.01" required>
+            </label>
+            <label>
+                Average Pay ($)
+                <input id = "avgpay" type = "number" min = "0" step = "0.01" required>
+            </label>
+            <label>
+                Leave Rate (%)
+                <input id = "leaverate" type = "number" min = "0" max = "100" step = "0.01" required>
+            </label>
+
+        </form>
+
+        <section class = "results">
+            <h2> Calculated Estimate </h2>
+            <div class = "result">
+                <span>S.B 396 Annual Contributions</span>
+                <strong id = "contributions">0 </strong>
+            </div>
+            <div class = "result">
+                <span> Projected HR Cost Savings</span>
+                <strong id = "savings">0</strong>
+            </div>
+            <div class = "note">
+                <p id = "note"></p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const form = document.querySelector("#calculator");
+        const fields = {
+            numemployees: document.querySelector("#numemployees"),
+            payroll: document.querySelector("#payroll"),
+            avgpay: document.querySelector("#avgpay"),
+            leaverate: document.querySelector("#leaverate"),
+        };
+        const money = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 0,
+        });
+        function updateEstimate() {
+            const numemployees = Number(fields.numemployees.value);
+            const payroll = Number(fields.payroll.value);
+            const avgpay = Number(fields.avgpay.value);
+            const leaverate = Number(fields.leaverate.value);
+            const valid = form.checkValidity();
+
+            if(!valid || numemployees <=0) {
+                return;
+            }
+
+            function calculateContributions(numemployees, payroll) {
+                if (numemployees < 15) {
+                    return 0;
+                }
+                else if (numemployees >= 15) {
+                    return payroll * 0.004
+                }
+            }
+
+            const contributions = calculateContributions(numemployees, payroll);
+            const savings = numemployees * (leaverate / 100) *avgpay * 0.1;
+
+            document.querySelector("#contributions").textContent = money.format(contributions);
+            document.querySelector("#savings").textContent = money.format(savings);
+            
+
+
+            document.getElementById("note").textContent = `Your annual contributions under SB 396 would be ${money.format(contributions)}. Your projected HR cost savings would be ${money.format(savings)}.`;
+
+
+        }
+        
+        form.addEventListener('input', updateEstimate);
+        updateEstimate();
+
+            
+    </script>
+</body>
+</html>
