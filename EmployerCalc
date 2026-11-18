@@ -12,6 +12,7 @@
       background: #e7e7e7;
     }
 
+
  * {
       box-sizing: border-box;
     }
@@ -126,6 +127,13 @@
   </style>
 </head>
 <body>
+<nav>
+<a href="index.html">Home</a> |
+<a href="about.html>About</a>
+</nav>
+
+
+
     <main>
         <h1> Paid Leave Cost Calculator</h1>
         <form id = "calculator" class = "fields">
